@@ -79,14 +79,15 @@ This integration communicates with the Bosch SmartLife cloud service built on th
 - **Devices not showing**: Only sub-devices connected to the selected panel will appear
 - **Connection errors**: Check your network can reach `api.bosch-smartlife.com`
 
-## Credits
+## Disclaimer
 
-- Built for the Bosch SmartLife platform (China) using the AbleCloud IoT API
-- Home Assistant community
+This project is an independent, community-driven integration and is **not affiliated with, endorsed by, or associated with Robert Bosch GmbH, Bosch (China) Investment Ltd., or any of their subsidiaries**. "Bosch" and "Bosch SmartLife" (博世智慧生活) are trademarks of Robert Bosch GmbH. All trademarks belong to their respective owners.
+
+This integration interacts with the Bosch SmartLife cloud API through reverse-engineered protocols. It is provided **as-is** with no warranty. The authors are not responsible for any damage to your devices, account suspension, or other consequences arising from the use of this software. **Use at your own risk.**
 
 ## License
 
-MIT
+[MIT No Attribution (MIT-0)](LICENSE)
 
 ---
 
@@ -165,6 +166,12 @@ bosch_smartlife:
 - **设备不显示**：只有连接到所选面板的子设备才会出现
 - **连接错误**：请检查网络是否能访问 `api.bosch-smartlife.com`
 
+## 免责声明
+
+本项目为社区独立开发的集成，**与罗伯特·博世有限公司（Robert Bosch GmbH）、博世（中国）投资有限公司及其任何子公司无关，未获得其认可或授权。** "博世"及"博世智慧生活"（Bosch SmartLife）为罗伯特·博世有限公司的商标，所有商标归其各自所有者所有。
+
+本集成通过逆向工程获取的协议与博世智慧生活云端 API 通信，**按原样提供，不附带任何保证。** 作者不对因使用本软件导致的任何设备损坏、账号封禁或其他后果承担责任。**使用风险自负。**
+
 ## 许可证
 
-MIT
+[MIT No Attribution (MIT-0)](LICENSE)
