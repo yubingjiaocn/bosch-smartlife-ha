@@ -6,6 +6,14 @@ A Home Assistant custom integration for the **Bosch SmartLife** smart home platf
 
 Control your Bosch smart panel and connected sub-devices directly from Home Assistant.
 
+> **⚠️ Important:** This integration is **only** for the **Bosch SmartLife (博世智慧生活)** platform sold in the **Chinese market**. It does NOT work with:
+> - Bosch Smart Home Controller (European/US market) — use the official [Bosch SHC integration](https://www.home-assistant.io/integrations/bosch_shc/) instead
+> - Bosch EasyControl / CT200 thermostats
+> - Bosch/Worcester-Bosch heating systems
+> - Any other Bosch product outside the Chinese SmartLife ecosystem
+>
+> The supported hardware is the **Bosch SmartLife wall panel** (model SM11A101 and similar), manufactured by Heirun, running Android on S5P4418 SoC. These panels connect to sub-devices (lights, AC, curtains) via Zigbee and communicate with the cloud through the AbleCloud IoT platform.
+
 ## Supported Devices
 
 | Type | HA Platform | Features |
@@ -89,6 +97,14 @@ MIT
 适用于 **博世智慧生活** 智能家居平台（中国市场，基于 AbleCloud 物联网平台）的 Home Assistant 自定义集成。
 
 通过 Home Assistant 直接控制博世智能面板及其连接的子设备。
+
+> **⚠️ 重要提示：** 本集成**仅适用于**中国市场销售的 **博世智慧生活（Bosch SmartLife）** 平台，**不支持**以下产品：
+> - Bosch Smart Home Controller（欧洲/美国市场）— 请使用官方 [Bosch SHC 集成](https://www.home-assistant.io/integrations/bosch_shc/)
+> - Bosch EasyControl / CT200 温控器
+> - Bosch/Worcester-Bosch 供暖系统
+> - 中国博世智慧生活生态以外的任何博世产品
+>
+> 支持的硬件为 **博世智慧生活墙面面板**（型号 SM11A101 等），由海润代工，基于 S5P4418 SoC 运行 Android。面板通过 Zigbee 连接子设备（灯光、空调、窗帘），并通过 AbleCloud 物联网平台与云端通信。
 
 ## 支持的设备
 
