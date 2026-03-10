@@ -131,18 +131,21 @@ class BoschSmartLifeAPI:
 
     def ac_set(self, device_id: str, power: str = None, temp: int = None,
                mode: str = None, fan: int = None, name: str = "") -> dict:
+        """Control AC. mode: cold/hot/dry/fan/auto. fan: 1(low)/2(mid)/3(high). power: on/off"""
+        is_on = (power != "off") if power else True
         action = {
             "SDId": device_id,
-            "SDType": "1",
+            "SDType": "ac",
             "SDName": name,
-            "Chanel": "1",
+            "Online": 1 if is_on else 0,
+            "Power": power or "on",
+            "Delay": 0,
+            "Remain": 0,
         }
-        if power is not None:
-            action["Power"] = power
-        if temp is not None:
-            action["SetTemp"] = temp
         if mode is not None:
             action["Mode"] = mode
+        if temp is not None:
+            action["SetTemp"] = temp
         if fan is not None:
             action["Wind"] = fan
         return self._control([action])
