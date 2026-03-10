@@ -109,7 +109,12 @@ class BoschCover(CoordinatorEntity, CoverEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        await self.hass.async_add_executor_job(
-            self._api.curtain_set, self._device_id, "stopped", self._attr_name
-        )
+        if self._cover_type == "sheer":
+            await self.hass.async_add_executor_job(
+                self._api.sheer_set, self._device_id, "stopped", self._attr_name
+            )
+        else:
+            await self.hass.async_add_executor_job(
+                self._api.curtain_set, self._device_id, "stopped", self._attr_name
+            )
         await self.coordinator.async_request_refresh()
