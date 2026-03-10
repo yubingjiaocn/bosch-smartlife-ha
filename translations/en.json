@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Bosch SmartLife Login",
+        "description": "Enter your Bosch SmartLife account credentials.",
+        "data": {
+          "account": "Phone number",
+          "password": "Password"
+        }
+      },
+      "panel": {
+        "title": "Select Panel",
+        "description": "Multiple panels found. Please select the panel to configure.",
+        "data": {
+          "panel_id": "Panel"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid phone number or password.",
+      "cannot_connect": "Failed to connect to Bosch SmartLife service.",
+      "no_panels": "No panels found for this account."
+    },
+    "abort": {
+      "already_configured": "This panel is already configured."
+    }
+  }
+}

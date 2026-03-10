@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "博世智慧生活登录",
+        "description": "请输入您的博世智慧生活账号信息。",
+        "data": {
+          "account": "手机号",
+          "password": "密码"
+        }
+      },
+      "panel": {
+        "title": "选择面板",
+        "description": "发现多个面板，请选择要配置的面板。",
+        "data": {
+          "panel_id": "面板"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "手机号或密码错误。",
+      "cannot_connect": "无法连接博世智慧生活服务。",
+      "no_panels": "该账号下未找到面板。"
+    },
+    "abort": {
+      "already_configured": "该面板已配置。"
+    }
+  }
+}

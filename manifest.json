@@ -1,0 +1,10 @@
+{
+  "domain": "bosch_smartlife",
+  "name": "Bosch SmartLife",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/willyzheng/bosch-smartlife-ha",
+  "iot_class": "cloud_polling",
+  "requirements": ["requests>=2.28.0"],
+  "version": "1.0.0"
+}
