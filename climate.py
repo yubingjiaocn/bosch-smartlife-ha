@@ -25,16 +25,16 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 MODE_MAP = {
-    "cool": HVACMode.COOL,
-    "heat": HVACMode.HEAT,
+    "cold": HVACMode.COOL,
+    "hot": HVACMode.HEAT,
     "dry": HVACMode.DRY,
     "fan": HVACMode.FAN_ONLY,
     "auto": HVACMode.AUTO,
 }
 MODE_REVERSE = {v: k for k, v in MODE_MAP.items()}
 
-FAN_MAP = {0: FAN_AUTO, 1: FAN_LOW, 2: FAN_MEDIUM, 3: FAN_HIGH}
-FAN_REVERSE = {v: k for k, v in FAN_MAP.items()}
+FAN_MAP = {1: FAN_LOW, 2: FAN_MEDIUM, 3: FAN_HIGH}
+FAN_REVERSE = {FAN_LOW: 1, FAN_MEDIUM: 2, FAN_HIGH: 3}
 
 
 def _create_entities(coordinator, api) -> list:
@@ -72,7 +72,7 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
 
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.DRY, HVACMode.FAN_ONLY, HVACMode.AUTO]
-    _attr_fan_modes = [FAN_LOW, FAN_MEDIUM, FAN_HIGH, FAN_AUTO]
+    _attr_fan_modes = [FAN_LOW, FAN_MEDIUM, FAN_HIGH]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
     _attr_min_temp = 16
     _attr_max_temp = 30

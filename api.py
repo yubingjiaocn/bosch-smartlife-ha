@@ -120,7 +120,7 @@ class BoschSmartLifeAPI:
     def light_set(self, device_id: str, power: str, name: str = "", brightness: int = None) -> dict:
         action = {
             "SDId": device_id,
-            "SDType": "4",
+            "SDType": "light",
             "SDName": name,
             "Power": power,
             "Chanel": "1",
