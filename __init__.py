@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -103,6 +104,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "api": api,
         "coordinator": coordinator,
     }
+
+    # Register panel as a parent device
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, api.panel_id)},
+        name=f"Bosch Panel {api.panel_id}",
+        manufacturer="Bosch",
+        model="SM11A101",
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

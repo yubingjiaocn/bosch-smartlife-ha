@@ -10,6 +10,7 @@ from homeassistant.components.light import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -54,6 +55,7 @@ class BoschLight(CoordinatorEntity, LightEntity):
         super().__init__(coordinator)
         self._api = api
         self._device_id = device_data["lightDeviceId"]
+        self._panel_id = api.panel_id
         self._attr_name = device_data["name"]
         self._attr_unique_id = f"bosch_light_{self._device_id}"
         self._attr_color_mode = ColorMode.ONOFF
@@ -61,6 +63,12 @@ class BoschLight(CoordinatorEntity, LightEntity):
         if device_data.get("brightness", -1) >= 0:
             self._attr_color_mode = ColorMode.BRIGHTNESS
             self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},
+            name=device_data["name"],
+            manufacturer="Bosch",
+            via_device=(DOMAIN, self._panel_id),
+        )
 
     @callback
     def _handle_coordinator_update(self) -> None:

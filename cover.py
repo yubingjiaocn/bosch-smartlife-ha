@@ -10,6 +10,7 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -24,8 +25,8 @@ def _create_entities(coordinator, api) -> list:
         if dev.get("subDeviceType") == 5:  # Curtain
             device_id = dev["curtainDeviceId"]
             name = dev["name"]
-            entities.append(BoschCover(coordinator, api, device_id, f"{name} Curtain", "curtain"))
-            entities.append(BoschCover(coordinator, api, device_id, f"{name} Sheer", "sheer"))
+            entities.append(BoschCover(coordinator, api, device_id, f"{name} Curtain", "curtain", name))
+            entities.append(BoschCover(coordinator, api, device_id, f"{name} Sheer", "sheer", name))
     return entities
 
 
@@ -56,13 +57,20 @@ class BoschCover(CoordinatorEntity, CoverEntity):
     _attr_device_class = CoverDeviceClass.CURTAIN
     _attr_supported_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
 
-    def __init__(self, coordinator, api, device_id, name, cover_type):
+    def __init__(self, coordinator, api, device_id, name, cover_type, device_name):
         super().__init__(coordinator)
         self._api = api
         self._device_id = device_id
+        self._panel_id = api.panel_id
         self._cover_type = cover_type  # "curtain" or "sheer"
         self._attr_name = name
         self._attr_unique_id = f"bosch_cover_{device_id}_{cover_type}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=device_name,
+            manufacturer="Bosch",
+            via_device=(DOMAIN, self._panel_id),
+        )
 
     def _get_device_data(self) -> dict | None:
         for dev in self.coordinator.data or []:

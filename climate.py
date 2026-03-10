@@ -17,6 +17,7 @@ from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -81,8 +82,15 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
         super().__init__(coordinator)
         self._api = api
         self._device_id = device_data["acDeviceId"]
+        self._panel_id = api.panel_id
         self._attr_name = device_data["name"]
         self._attr_unique_id = f"bosch_ac_{self._device_id}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},
+            name=device_data["name"],
+            manufacturer="Bosch",
+            via_device=(DOMAIN, self._panel_id),
+        )
 
     def _get_device_data(self) -> dict | None:
         for dev in self.coordinator.data or []:
