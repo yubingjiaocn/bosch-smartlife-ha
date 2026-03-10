@@ -148,7 +148,9 @@ class BoschSmartLifeAPI:
         return self._control([action])
 
     def curtain_set(self, device_id: str, status: str, name: str = "") -> dict:
-        """Control curtain (布帘). status: opened/closed/stopped"""
+        """Control curtain (布帘). status: opened/closed/stop"""
+        if status == "stopped":
+            status = "stop"
         return self._control([{
             "SDId": device_id,
             "SDType": "curtain",
@@ -158,7 +160,9 @@ class BoschSmartLifeAPI:
         }])
 
     def sheer_set(self, device_id: str, status: str, name: str = "") -> dict:
-        """Control sheer (窗纱). status: opened/closed/stopped"""
+        """Control sheer (窗纱). status: opened/closed/stop"""
+        if status == "stopped":
+            status = "stop"
         return self._control([{
             "SDId": device_id,
             "SDType": "curtain",
