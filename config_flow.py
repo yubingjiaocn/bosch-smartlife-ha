@@ -77,7 +77,7 @@ class BoschSmartLifeConfigFlow(ConfigFlow, domain=DOMAIN):
                     elif len(self._panels) == 1:
                         # Only one panel, skip selection
                         panel = self._panels[0]
-                        panel_id = panel.get("panelId") or panel.get("deviceId", "")
+                        panel_id = panel.get("physicalDeviceId", "")
                         return await self._create_entry(panel_id)
                     else:
                         return await self.async_step_panel()
@@ -97,9 +97,11 @@ class BoschSmartLifeConfigFlow(ConfigFlow, domain=DOMAIN):
 
         panel_options = {}
         for panel in self._panels:
-            pid = panel.get("panelId") or panel.get("deviceId", "")
-            name = panel.get("name") or panel.get("panelName") or pid
-            panel_options[pid] = f"{name} ({pid})"
+            pid = panel.get("physicalDeviceId", "")
+            name = panel.get("name", pid)
+            family = panel.get("familyName", "")
+            label = f"{name} - {family} ({pid})" if family else f"{name} ({pid})"
+            panel_options[pid] = label
 
         return self.async_show_form(
             step_id="panel",

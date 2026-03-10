@@ -90,10 +90,20 @@ class BoschSmartLifeAPI:
     # ─── Query ──────────────────────────────────────────
 
     def get_panels(self) -> list:
-        """Get all panels bound to the account."""
+        """Get all panels bound to the account via family→device discovery."""
         self._ensure_auth()
-        data = self._post("/panelDevice/v1/getPanelList", {})
-        return data.get("result", [])
+        families = self._post("/family/v1/listFamily", {})
+        panels = []
+        for fam in families.get("result", []):
+            fam_id = fam.get("id")
+            if not fam_id:
+                continue
+            devices = self._post("/panelDevice/v1/queryDeviceList", {"familyId": fam_id})
+            for dev in devices.get("devices", []):
+                dev["familyId"] = fam_id
+                dev["familyName"] = fam.get("familyName", "")
+                panels.append(dev)
+        return panels
 
     def get_sub_devices(self) -> list:
         data = self._post("/panelDevice/v1/getSubDeviceByPanelId", {"panelId": self.panel_id})
