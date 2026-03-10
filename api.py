@@ -141,13 +141,10 @@ class BoschSmartLifeAPI:
             "Power": power or "on",
             "Delay": 0,
             "Remain": 0,
+            "Mode": mode or "cold",
+            "SetTemp": temp or 24,
+            "Wind": fan or 1,
         }
-        if mode is not None:
-            action["Mode"] = mode
-        if temp is not None:
-            action["SetTemp"] = temp
-        if fan is not None:
-            action["Wind"] = fan
         return self._control([action])
 
     def curtain_set(self, device_id: str, status: str, name: str = "") -> dict:
