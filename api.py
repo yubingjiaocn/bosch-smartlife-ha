@@ -41,7 +41,10 @@ class BoschSmartLifeAPI:
                 with open(TOKEN_CACHE_PATH, "r") as f:
                     cache = json.load(f)
                 if cache.get("account") == self.account:
-                    expire = cache.get("token_expire", 0)
+                    try:
+                        expire = float(cache.get("token_expire", 0))
+                    except (ValueError, TypeError):
+                        expire = 0
                     # Check if token is still valid (with 5 min buffer)
                     if expire > time.time() + 300:
                         self.token = cache["token"]
@@ -104,8 +107,11 @@ class BoschSmartLifeAPI:
         if resp.status_code == 200 and "token" in data:
             self.token = data["token"]
             self.user_id = data["userId"]
-            self.token_expire = data.get("tokenExpire")
-            _LOGGER.info("Bosch SmartLife login OK, userId=%s", self.user_id)
+            try:
+                self.token_expire = float(data["tokenExpire"]) if data.get("tokenExpire") else None
+            except (ValueError, TypeError):
+                self.token_expire = None
+            _LOGGER.info("Bosch SmartLife login OK, userId=%s, tokenExpire=%s", self.user_id, self.token_expire)
             self._save_token_cache()
             return True
         _LOGGER.error("Bosch SmartLife login failed: %s", data)
@@ -114,9 +120,13 @@ class BoschSmartLifeAPI:
     def _ensure_auth(self):
         if not self.token:
             self.login()
-        elif self.token_expire and self.token_expire < time.time() + 300:
-            _LOGGER.info("Token expiring soon, re-logging in")
-            self.login()
+        elif self.token_expire:
+            try:
+                if float(self.token_expire) < time.time() + 300:
+                    _LOGGER.info("Token expiring soon, re-logging in")
+                    self.login()
+            except (ValueError, TypeError):
+                pass
 
     def _post(self, path: str, payload: dict) -> dict:
         self._ensure_auth()
