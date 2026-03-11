@@ -96,7 +96,8 @@ class BoschSmartLifeAPI:
             })
         return h
 
-    def login(self) -> bool:
+    def login(self, reason: str = "initial") -> bool:
+        _LOGGER.info("Bosch SmartLife login (reason=%s)", reason)
         url = f"{ROUTER_ADDRESS}/zc-account/v1/login"
         resp = self._session.post(url, json={
             "account": self.account,
@@ -110,10 +111,11 @@ class BoschSmartLifeAPI:
                 self.token_expire = float(data["tokenExpire"]) if data.get("tokenExpire") else None
             except (ValueError, TypeError):
                 self.token_expire = None
-            _LOGGER.info("Bosch SmartLife login OK, userId=%s, tokenExpire=%s", self.user_id, self.token_expire)
+            _LOGGER.info("Bosch SmartLife login OK (reason=%s), userId=%s, tokenExpire=%s",
+                         reason, self.user_id, self.token_expire)
             self._save_token_cache()
             return True
-        _LOGGER.error("Bosch SmartLife login failed: %s", data)
+        _LOGGER.error("Bosch SmartLife login failed (reason=%s): %s", reason, data)
         return False
 
     def _ensure_auth(self):
@@ -121,12 +123,13 @@ class BoschSmartLifeAPI:
             self._cache_loaded = True
             self._load_token_cache()
         if not self.token:
-            self.login()
+            self.login(reason="no_token")
         elif self.token_expire:
             try:
                 if float(self.token_expire) < time.time() + 300:
-                    _LOGGER.info("Token expiring soon, re-logging in")
-                    self.login()
+                    _LOGGER.info("Token expiring soon (expire=%.0f, now=%.0f), proactive re-login",
+                                 float(self.token_expire), time.time())
+                    self.login(reason="token_expiring")
             except (ValueError, TypeError):
                 pass
 
@@ -138,7 +141,7 @@ class BoschSmartLifeAPI:
         if "errorCode" in data and data.get("errorCode") == 1999:
             # Token expired/kicked, re-login
             _LOGGER.info("Token expired (errorCode 1999), re-logging in")
-            self.login()
+            self.login(reason="error_1999")
             resp = self._session.post(url, json=payload, headers=self._headers(), timeout=15)
             data = resp.json()
         return data
@@ -163,7 +166,18 @@ class BoschSmartLifeAPI:
 
     def get_sub_devices(self) -> list:
         data = self._post("/panelDevice/v1/getSubDeviceByPanelId", {"panelId": self.panel_id})
-        return data.get("result", [])
+        result = data.get("result", [])
+        if not result and self.token:
+            # Empty list may indicate token was kicked by another client;
+            # force re-login and retry once
+            _LOGGER.warning("get_sub_devices returned empty list, possible kicked session — re-login and retry")
+            self.token = None
+            self.login(reason="kicked_empty_list")
+            data = self._post("/panelDevice/v1/getSubDeviceByPanelId", {"panelId": self.panel_id})
+            result = data.get("result", [])
+            if not result:
+                _LOGGER.warning("get_sub_devices still empty after re-login")
+        return result
 
     # ─── Control ────────────────────────────────────────
 
