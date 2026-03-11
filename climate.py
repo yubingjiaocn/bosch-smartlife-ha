@@ -11,7 +11,6 @@ from homeassistant.components.climate.const import (
     FAN_LOW,
     FAN_MEDIUM,
     FAN_HIGH,
-    FAN_AUTO,
 )
 from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from homeassistant.config_entries import ConfigEntry
@@ -91,8 +90,16 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
             manufacturer="Bosch",
             via_device=(DOMAIN, self._panel_id),
         )
+        # Set initial state from device_data to avoid "unknown"
+        if device_data.get("power") == "off":
+            self._attr_hvac_mode = HVACMode.OFF
+        else:
+            self._attr_hvac_mode = MODE_MAP.get(device_data.get("mode"), HVACMode.OFF)
+        self._attr_target_temperature = device_data.get("setTemp", 24)
+        self._attr_fan_mode = FAN_MAP.get(device_data.get("fan"), FAN_LOW)
+        self._attr_current_temperature = None  # Panel doesn't report room temp
 
-    def _get_device_data(self) -> dict | None:
+    def _find_device(self) -> dict | None:
         for dev in self.coordinator.data or []:
             if dev.get("acDeviceId") == self._device_id:
                 return dev
@@ -100,33 +107,25 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
+        dev = self._find_device()
+        if dev:
+            if dev.get("power") == "off":
+                self._attr_hvac_mode = HVACMode.OFF
+            else:
+                self._attr_hvac_mode = MODE_MAP.get(dev.get("mode"), HVACMode.AUTO)
+            self._attr_target_temperature = dev.get("setTemp", self._attr_target_temperature)
+            self._attr_fan_mode = FAN_MAP.get(dev.get("fan"), self._attr_fan_mode)
         self.async_write_ha_state()
-
-    @property
-    def hvac_mode(self) -> HVACMode:
-        dev = self._get_device_data()
-        if not dev or dev.get("power") == "off":
-            return HVACMode.OFF
-        return MODE_MAP.get(dev.get("mode"), HVACMode.AUTO)
-
-    @property
-    def current_temperature(self) -> float | None:
-        return None  # Panel doesn't report room temp
-
-    @property
-    def target_temperature(self) -> float | None:
-        dev = self._get_device_data()
-        return dev.get("setTemp") if dev else None
-
-    @property
-    def fan_mode(self) -> str | None:
-        dev = self._get_device_data()
-        return FAN_MAP.get(dev.get("fan"), FAN_AUTO) if dev else None
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
+            # AC off must send all fields (Mode/SetTemp/Wind)
+            dev = self._find_device()
+            temp = dev.get("setTemp", 24) if dev else 24
+            mode = dev.get("mode", "cold") if dev else "cold"
+            fan = dev.get("fan", 1) if dev else 1
             await self.hass.async_add_executor_job(
-                self._api.ac_set, self._device_id, "off"
+                self._api.ac_set, self._device_id, "off", temp, mode, fan
             )
         else:
             mode_str = MODE_REVERSE.get(hvac_mode, "auto")

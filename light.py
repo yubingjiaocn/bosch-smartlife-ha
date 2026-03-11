@@ -69,6 +69,10 @@ class BoschLight(CoordinatorEntity, LightEntity):
             manufacturer="Bosch",
             via_device=(DOMAIN, self._panel_id),
         )
+        # Set initial state from device_data to avoid "unknown"
+        self._attr_is_on = device_data.get("power") == "on"
+        if device_data.get("brightness", -1) >= 0:
+            self._attr_brightness = int(device_data["brightness"] * 255 / 100)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -79,13 +83,6 @@ class BoschLight(CoordinatorEntity, LightEntity):
                     self._attr_brightness = int(dev["brightness"] * 255 / 100)
                 break
         self.async_write_ha_state()
-
-    @property
-    def is_on(self) -> bool | None:
-        for dev in self.coordinator.data or []:
-            if dev.get("lightDeviceId") == self._device_id:
-                return dev.get("power") == "on"
-        return None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         brightness = kwargs.get(ATTR_BRIGHTNESS)

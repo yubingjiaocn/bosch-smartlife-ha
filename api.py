@@ -2,6 +2,7 @@
 import hashlib
 import json
 import logging
+import os
 import random
 import time
 
@@ -11,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 ROUTER_ADDRESS = "https://api.bosch-smartlife.com"
 MAJOR_DOMAIN = "16"
+TOKEN_CACHE_PATH = "/tmp/bosch_token_cache.json"
 
 
 class BoschSmartLifeAPI:
@@ -24,11 +26,49 @@ class BoschSmartLifeAPI:
         self.user_id = None
         self.token_expire = None
         self._session = requests.Session()
+        # Try loading cached token to avoid kicking the phone app
+        self._load_token_cache()
 
     def _gen_nonce(self, timestamp_s: int, length: int = 16) -> str:
         base = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         rng = random.Random(timestamp_s)
         return ''.join(base[rng.randint(0, 61)] for _ in range(length))
+
+    def _load_token_cache(self):
+        """Load cached token from file to avoid re-login (which kicks the phone app)."""
+        try:
+            if os.path.exists(TOKEN_CACHE_PATH):
+                with open(TOKEN_CACHE_PATH, "r") as f:
+                    cache = json.load(f)
+                if cache.get("account") == self.account:
+                    expire = cache.get("token_expire", 0)
+                    # Check if token is still valid (with 5 min buffer)
+                    if expire > time.time() + 300:
+                        self.token = cache["token"]
+                        self.user_id = cache["user_id"]
+                        self.token_expire = expire
+                        _LOGGER.info("Loaded cached token for userId=%s, expires in %.0f min",
+                                     self.user_id, (expire - time.time()) / 60)
+                    else:
+                        _LOGGER.info("Cached token expired or expiring soon, will re-login")
+        except Exception as e:
+            _LOGGER.warning("Failed to load token cache: %s", e)
+
+    def _save_token_cache(self):
+        """Save token to cache file."""
+        try:
+            cache = {
+                "account": self.account,
+                "token": self.token,
+                "user_id": self.user_id,
+                "token_expire": self.token_expire,
+                "saved_at": time.time(),
+            }
+            with open(TOKEN_CACHE_PATH, "w") as f:
+                json.dump(cache, f)
+            _LOGGER.debug("Saved token cache to %s", TOKEN_CACHE_PATH)
+        except Exception as e:
+            _LOGGER.warning("Failed to save token cache: %s", e)
 
     def _sign(self, secret: str, timeout_s: int, timestamp_s: int, nonce: str) -> str:
         raw = f"{timeout_s}{timestamp_s}{nonce}{secret}"
@@ -66,12 +106,16 @@ class BoschSmartLifeAPI:
             self.user_id = data["userId"]
             self.token_expire = data.get("tokenExpire")
             _LOGGER.info("Bosch SmartLife login OK, userId=%s", self.user_id)
+            self._save_token_cache()
             return True
         _LOGGER.error("Bosch SmartLife login failed: %s", data)
         return False
 
     def _ensure_auth(self):
         if not self.token:
+            self.login()
+        elif self.token_expire and self.token_expire < time.time() + 300:
+            _LOGGER.info("Token expiring soon, re-logging in")
             self.login()
 
     def _post(self, path: str, payload: dict) -> dict:
@@ -80,8 +124,8 @@ class BoschSmartLifeAPI:
         resp = self._session.post(url, json=payload, headers=self._headers(), timeout=15)
         data = resp.json()
         if "errorCode" in data and data.get("errorCode") == 1999:
-            # Token expired, re-login
-            _LOGGER.info("Token expired, re-logging in")
+            # Token expired/kicked, re-login
+            _LOGGER.info("Token expired (errorCode 1999), re-logging in")
             self.login()
             resp = self._session.post(url, json=payload, headers=self._headers(), timeout=15)
             data = resp.json()

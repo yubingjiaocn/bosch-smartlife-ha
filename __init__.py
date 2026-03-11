@@ -38,7 +38,13 @@ async def _create_coordinator(hass: HomeAssistant, api: BoschSmartLifeAPI) -> Da
 
     async def _async_update():
         try:
-            return await hass.async_add_executor_job(api.get_sub_devices)
+            result = await hass.async_add_executor_job(api.get_sub_devices)
+            _LOGGER.debug(
+                "Bosch coordinator update: got %d devices, types: %s",
+                len(result),
+                [d.get("subDeviceType") for d in result],
+            )
+            return result
         except Exception as err:
             raise UpdateFailed(f"Error fetching Bosch data: {err}") from err
 
@@ -68,7 +74,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         panel_id=conf[CONF_PANEL_ID],
     )
 
-    await hass.async_add_executor_job(api.login)
+    await hass.async_add_executor_job(api._ensure_auth)
 
     coordinator = await _create_coordinator(hass, api)
 
@@ -93,8 +99,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         panel_id=entry.data[CONF_PANEL_ID],
     )
 
-    success = await hass.async_add_executor_job(api.login)
-    if not success:
+    await hass.async_add_executor_job(api._ensure_auth)
+    if not api.token:
+        _LOGGER.error("Bosch SmartLife: failed to authenticate")
         return False
 
     coordinator = await _create_coordinator(hass, api)
