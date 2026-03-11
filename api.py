@@ -26,8 +26,7 @@ class BoschSmartLifeAPI:
         self.user_id = None
         self.token_expire = None
         self._session = requests.Session()
-        # Try loading cached token to avoid kicking the phone app
-        self._load_token_cache()
+        self._cache_loaded = False
 
     def _gen_nonce(self, timestamp_s: int, length: int = 16) -> str:
         base = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -118,6 +117,9 @@ class BoschSmartLifeAPI:
         return False
 
     def _ensure_auth(self):
+        if not self._cache_loaded:
+            self._cache_loaded = True
+            self._load_token_cache()
         if not self.token:
             self.login()
         elif self.token_expire:
