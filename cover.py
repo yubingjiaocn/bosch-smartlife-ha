@@ -71,27 +71,20 @@ class BoschCover(CoordinatorEntity, CoverEntity):
             manufacturer="Bosch",
             via_device=(DOMAIN, self._panel_id),
         )
-        # Set initial state from coordinator data to avoid "unknown"
-        dev = self._find_device(coordinator.data)
-        if dev:
-            status_key = "status1" if self._cover_type == "sheer" else "status"
-            self._attr_is_closed = dev.get(status_key) == "closed"
-        else:
-            self._attr_is_closed = None
 
-    def _find_device(self, data) -> dict | None:
-        for dev in data or []:
+    def _get_device_data(self) -> dict | None:
+        for dev in self.coordinator.data or []:
             if dev.get("curtainDeviceId") == self._device_id:
                 return dev
         return None
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        dev = self._find_device(self.coordinator.data)
-        if dev:
-            status_key = "status1" if self._cover_type == "sheer" else "status"
-            self._attr_is_closed = dev.get(status_key) == "closed"
-        self.async_write_ha_state()
+    @property
+    def is_closed(self) -> bool | None:
+        dev = self._get_device_data()
+        if not dev:
+            return None
+        status_key = "status1" if self._cover_type == "sheer" else "status"
+        return dev.get(status_key) == "closed"
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         if self._cover_type == "sheer":
@@ -118,10 +111,10 @@ class BoschCover(CoordinatorEntity, CoverEntity):
     async def async_stop_cover(self, **kwargs: Any) -> None:
         if self._cover_type == "sheer":
             await self.hass.async_add_executor_job(
-                self._api.sheer_set, self._device_id, "stop", self._attr_name
+                self._api.sheer_set, self._device_id, "stopped", self._attr_name
             )
         else:
             await self.hass.async_add_executor_job(
-                self._api.curtain_set, self._device_id, "stop", self._attr_name
+                self._api.curtain_set, self._device_id, "stopped", self._attr_name
             )
         await self.coordinator.async_request_refresh()

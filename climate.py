@@ -72,7 +72,7 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.DRY, HVACMode.FAN_ONLY, HVACMode.AUTO]
     _attr_fan_modes = [FAN_LOW, FAN_MEDIUM, FAN_HIGH]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
     _attr_min_temp = 16
     _attr_max_temp = 30
     _attr_target_temperature_step = 1
@@ -129,22 +129,31 @@ class BoschClimate(CoordinatorEntity, ClimateEntity):
             )
         else:
             mode_str = MODE_REVERSE.get(hvac_mode, "auto")
+            dev = self._find_device()
+            temp = dev.get("setTemp", 24) if dev else 24
+            fan = dev.get("fan", 1) if dev else 1
             await self.hass.async_add_executor_job(
-                self._api.ac_set, self._device_id, "on", None, mode_str
+                self._api.ac_set, self._device_id, "on", temp, mode_str, fan
             )
         await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
+            dev = self._find_device()
+            mode = dev.get("mode", "cold") if dev else "cold"
+            fan = dev.get("fan", 1) if dev else 1
             await self.hass.async_add_executor_job(
-                self._api.ac_set, self._device_id, None, int(temp)
+                self._api.ac_set, self._device_id, "on", int(temp), mode, fan
             )
         await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         fan_int = FAN_REVERSE.get(fan_mode, 0)
+        dev = self._find_device()
+        mode = dev.get("mode", "cold") if dev else "cold"
+        temp = dev.get("setTemp", 24) if dev else 24
         await self.hass.async_add_executor_job(
-            self._api.ac_set, self._device_id, None, None, None, fan_int
+            self._api.ac_set, self._device_id, "on", temp, mode, fan_int
         )
         await self.coordinator.async_request_refresh()
