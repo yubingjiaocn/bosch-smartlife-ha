@@ -111,6 +111,10 @@ class BoschSmartLifeAPI:
                 self.token_expire = float(data["tokenExpire"]) if data.get("tokenExpire") else None
             except (ValueError, TypeError):
                 self.token_expire = None
+            if not self.token_expire:
+                # AbleCloud doesn't return tokenExpire; default to 2h based on observed TTL
+                self.token_expire = time.time() + 7200
+                _LOGGER.debug("tokenExpire not provided, defaulting to now + 2h")
             _LOGGER.info("Bosch SmartLife login OK (reason=%s), userId=%s, tokenExpire=%s",
                          reason, self.user_id, self.token_expire)
             self._save_token_cache()
